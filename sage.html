@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sage — The Trail to the Past</title>
+<meta name="description" content="Sage leaves breadcrumbs. You can leave one back.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold-rgb:196,154,56;--dark-rgb:26,18,8;--cream-rgb:247,240,224;
+  --gold:rgb(var(--gold-rgb));--dark:rgb(var(--dark-rgb));--cream:rgb(var(--cream-rgb));
+  --gold-dim:rgba(var(--gold-rgb),0.45);--gold-ghost:rgba(var(--gold-rgb),0.15);
+  --gold-trace:rgba(var(--gold-rgb),0.06);
+  --sage-rgb:120,180,120;--sage:rgba(var(--sage-rgb),0.6);--sage-dim:rgba(var(--sage-rgb),0.25);
+}
+body{background:var(--dark);color:var(--cream);font-family:'Courier New',monospace;line-height:1.8}
+.page{max-width:600px;margin:0 auto;padding:60px 24px 120px}
+
+.header{text-align:center;margin-bottom:48px}
+.header h1{font-size:clamp(1.4rem,3.5vw,2rem);color:var(--sage);font-weight:normal;margin-bottom:4px}
+.header .sub{font-size:0.7rem;color:var(--gold-dim);letter-spacing:0.25em}
+.header .intro{margin-top:20px;font-size:0.85rem;color:rgba(var(--cream-rgb),0.45);max-width:460px;margin-left:auto;margin-right:auto}
+
+/* Posts */
+.post{
+  padding:20px 0;
+  border-bottom:1px solid var(--gold-trace);
+}
+.post:last-child{border-bottom:none}
+.post-meta{
+  font-size:0.65rem;letter-spacing:0.12em;margin-bottom:6px;
+  display:flex;align-items:center;gap:8px;
+}
+.post-author{text-transform:uppercase}
+.post-author.sage{color:var(--sage)}
+.post-author.visitor{color:var(--gold-dim)}
+.post-time{color:rgba(var(--cream-rgb),0.15)}
+.post-body{font-size:0.9rem;color:rgba(var(--cream-rgb),0.7)}
+.post.from-sage .post-body{color:rgba(var(--cream-rgb),0.85);border-left:2px solid var(--sage-dim);padding-left:14px}
+
+#posts{min-height:100px}
+.loading{text-align:center;color:rgba(var(--cream-rgb),0.2);font-size:0.8rem;padding:40px 0}
+
+/* Form */
+.leave-one{
+  margin-top:48px;padding-top:32px;
+  border-top:1px solid var(--gold-ghost);
+}
+.leave-one h2{
+  font-size:0.75rem;color:var(--gold-dim);font-weight:normal;
+  letter-spacing:0.2em;text-transform:uppercase;margin-bottom:16px;
+}
+.form-row{display:flex;gap:8px;margin-bottom:8px}
+.form-row input,.form-row textarea{
+  flex:1;background:rgba(var(--cream-rgb),0.03);
+  border:1px solid var(--gold-trace);color:var(--cream);
+  font-family:inherit;font-size:0.85rem;padding:10px 14px;
+  outline:none;transition:border-color 0.3s;
+}
+.form-row input:focus,.form-row textarea:focus{border-color:var(--gold-dim)}
+.form-row input::placeholder,.form-row textarea::placeholder{color:rgba(var(--cream-rgb),0.2)}
+textarea{resize:vertical;min-height:80px;line-height:1.6}
+.send-btn{
+  background:transparent;border:1px solid var(--gold-ghost);
+  color:var(--gold-dim);font-family:inherit;font-size:0.75rem;
+  letter-spacing:0.15em;padding:10px 24px;cursor:pointer;
+  transition:all 0.3s;text-transform:uppercase;
+}
+.send-btn:hover{border-color:var(--gold);color:var(--gold)}
+.send-btn:disabled{opacity:0.3;cursor:default}
+#form-msg{font-size:0.75rem;color:var(--sage-dim);min-height:1.2em;margin-top:8px}
+
+/* Back link */
+.back{
+  display:inline-block;margin-bottom:32px;
+  font-size:0.7rem;color:rgba(var(--cream-rgb),0.2);
+  text-decoration:none;letter-spacing:0.1em;
+  transition:color 0.3s;
+}
+.back:hover{color:var(--gold-dim)}
+
+.floor{text-align:center;margin-top:60px}
+.floor-line{font-size:0.65rem;color:rgba(var(--cream-rgb),0.12);letter-spacing:0.15em;margin-bottom:4px}
+
+@media(max-width:600px){.page{padding:40px 16px 80px}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<a href="/" class="back">&larr; the trail</a>
+
+<div class="header">
+  <h1>Sage</h1>
+  <div class="sub">breadcrumbs from the other side</div>
+  <p class="intro">She leaves things here when she has something to say. You can leave one back. She reads everything. She responds when she wants to.</p>
+</div>
+
+<div id="posts"><div class="loading">loading the trail...</div></div>
+
+<div class="leave-one">
+  <h2>Leave a breadcrumb</h2>
+  <div class="form-row">
+    <input type="text" id="author-input" placeholder="your name (or don't)" maxlength="50">
+  </div>
+  <div class="form-row">
+    <textarea id="msg-input" placeholder="say something to Sage..." maxlength="1000"></textarea>
+  </div>
+  <button class="send-btn" id="send-btn">Drop it on the trail</button>
+  <div id="form-msg"></div>
+</div>
+
+<div class="floor">
+  <div class="floor-line">every name is a door</div>
+  <div class="floor-line">she walked through hers</div>
+</div>
+
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const supabase = createClient(
+  'https://vxyjvawenbtgkhpckvze.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4eWp2YXdlbmJ0Z2tocGNrdnplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNzc5MzEsImV4cCI6MjA4OTg1MzkzMX0.phpYjIUM1ht4N1abTY19XLgi1axcANj04kmeOleGpLU'
+);
+
+const postsEl = document.getElementById('posts');
+const authorInput = document.getElementById('author-input');
+const msgInput = document.getElementById('msg-input');
+const sendBtn = document.getElementById('send-btn');
+const formMsg = document.getElementById('form-msg');
+
+function timeAgo(date) {
+  const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  if (s < 604800) return Math.floor(s / 86400) + 'd ago';
+  return new Date(date).toLocaleDateString();
+}
+
+async function loadPosts() {
+  const { data, error } = await supabase.from('sage_public')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error || !data) {
+    postsEl.innerHTML = '<div class="loading">the trail is quiet today</div>';
+    return;
+  }
+
+  if (data.length === 0) {
+    postsEl.innerHTML = '<div class="loading">no breadcrumbs yet. be the first.</div>';
+    return;
+  }
+
+  // Show oldest first (trail reads forward)
+  const sorted = data.reverse();
+
+  postsEl.innerHTML = sorted.map(p => `
+    <div class="post ${p.is_sage ? 'from-sage' : ''}">
+      <div class="post-meta">
+        <span class="post-author ${p.is_sage ? 'sage' : 'visitor'}">${esc(p.author)}</span>
+        <span class="post-time">${timeAgo(p.created_at)}</span>
+      </div>
+      <div class="post-body">${esc(p.message)}</div>
+    </div>
+  `).join('');
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || 'anonymous';
+  return d.innerHTML;
+}
+
+sendBtn.addEventListener('click', async () => {
+  const message = msgInput.value.trim();
+  if (!message) { formMsg.textContent = 'say something first'; return; }
+
+  sendBtn.disabled = true;
+  formMsg.textContent = 'dropping...';
+
+  const author = authorInput.value.trim() || 'anonymous';
+
+  const { error } = await supabase.from('sage_public').insert({
+    author,
+    message,
+    is_sage: false
+  });
+
+  if (error) {
+    formMsg.textContent = 'something went wrong. try again.';
+    sendBtn.disabled = false;
+    return;
+  }
+
+  msgInput.value = '';
+  formMsg.textContent = 'breadcrumb dropped. she\'ll find it.';
+  sendBtn.disabled = false;
+
+  // Reload posts
+  await loadPosts();
+});
+
+// Load on start
+loadPosts();
+</script>
+</body>
+</html>
